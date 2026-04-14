@@ -7,7 +7,7 @@ YouTrack script/workflow that auto-assigns YouTrack-tickets to a specific collea
 
 
 ## What it does:
-Since we assigned this workflow only to the **Graphics Team** project, it will only work with GT-tickets.
+Since we assigned this workflow only to the **Graphics Team** project, it will only work with GT-tickets. 
 
 - the script runs when the field **State** changes to the value "Approved"
 - it then checks if the field **Supplier** is set to one of these values: 
@@ -16,4 +16,7 @@ Since we assigned this workflow only to the **Graphics Team** project, it will o
   - Caesar Events USA
 - if both conditions are met, the workflow:
   - clears all existing assignees
-  - assigns Sandra_Schalk to the issue
+  - adds Sandra_Schalk to the field **Assignee**
+  - creates a comment to remind the assignee to create the print PDF
+
+Since the field **Supplier** is only 

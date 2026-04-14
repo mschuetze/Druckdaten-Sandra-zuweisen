@@ -1,47 +1,61 @@
-// v1.0.0
+// v1.1.0
 
 const entities = require('@jetbrains/youtrack-scripting-api/entities');
 
 exports.rule = entities.Issue.onChange({
-  title: 'Auto-Assign bei Approved + Supplier Match (Multi-User)',
+    title: 'Auto-Assign bei Approved + Supplier Match (Multi-User)',
 
-  guard: (ctx) => {
-    const issue = ctx.issue;
-    const allowedValues = ["Pollinger", "Wir machen Druck", "Caesar Events USA"];
+    guard: (ctx) => {
+        const issue = ctx.issue;
+        const allowedValues = ["Pollinger", "Wir machen Druck", "Caesar Events USA"];
 
-    const isApproved = issue.fields.becomes(ctx.State, ctx.State.Approved);
-    const supplier = issue.fields.Supplier;
-    const supplierMatch = supplier && allowedValues.includes(supplier.name);
+        const isApproved = issue.fields.becomes(ctx.State, ctx.State.Approved);
+        const supplier = issue.fields.Supplier;
+        const supplierMatch = supplier && allowedValues.includes(supplier.name);
 
-    return isApproved && supplierMatch;
-  },
-
-  action: (ctx) => {
-    const issue = ctx.issue;
-    const user = entities.User.findByLogin("Sandra_Schalk");
-
-    if (user) {
-      // Das Feld komplett leeren
-      issue.fields.Assignee.clear();
-      // User hinzufügen
-      issue.fields.Assignee.add(user);
-      console.log("Assignee bereinigt und auf Sandra_Schalk gesetzt.");
-    } else {
-      console.warn("Sandra_Schalk wurde nicht gefunden.");
-    }
-  },
-
-  requirements: {
-    State: {
-      type: entities.State.fieldType,
-      Approved: {}
+        return isApproved && supplierMatch;
     },
-    Supplier: {
-      type: entities.EnumField.fieldType
+
+    action: (ctx) => {
+        const issue = ctx.issue;
+        const loginSandra = "Sandra_Schalk";
+        const sandra = entities.User.findByLogin(loginSandra);
+
+        if (sandra) {
+            // Wir sammeln die Logins der aktuellen Assignees für die Erwähnung
+            const existingAssignees = [];
+            issue.fields.Assignee.forEach(user => {
+                if (user.login !== loginSandra) {
+                    existingAssignees.push("@" + user.login);
+                }
+            });
+            // Kommentar erstellen
+            if (existingAssignees.length > 0) {
+                const mentionText = existingAssignees.join(", ");
+                issue.addComment("Hallo " + mentionText + "! Bitte noch die Druckdaten erstellen. Sandra wurde bereits automatisch dem Ticket hinzugefügt.");
+            } 
+            else {
+            }
+            // User hinzufügen
+            issue.fields.Assignee.add(sandra);
+            console.log("Sandra_Schalk wurde dem Ticket hinzugefügt.");
+        } 
+        else {
+            console.warn("Sandra_Schalk wurde nicht gefunden.");
+        }
     },
-    Assignee: {
-      type: entities.User.fieldType,
-      multi: true 
+
+    requirements: {
+        State: {
+            type: entities.State.fieldType,
+            Approved: {}
+        },
+        Supplier: {
+            type: entities.EnumField.fieldType
+        },
+        Assignee: {
+            type: entities.User.fieldType,
+            multi: true 
+        }
     }
-  }
 });
